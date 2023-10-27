@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
+using System.ComponentModel.Design;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -46,6 +47,11 @@ namespace PatitoClient.ViewModels
            int port,
            string nickName)
         {
+            if(_chatViewModel.IsConnected)
+            {
+                throw new CheckoutException("You are already connected");
+            };
+            
             var serverIpLiteral = remoteServerIp;
         
             _serverIp = IPAddress.Parse(serverIpLiteral);

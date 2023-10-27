@@ -26,7 +26,7 @@ public partial class ChatViewModel : ObservableObject, INavigationAware
     private Client _clientReceiver;
     private Thread _listenDataThread;
     private List<Client> _clients;
-    private bool _isConnected;
+    public bool IsConnected;
     public int listViewSelectedIndex = -1;
 
     public delegate void HandlerTextMessageEvent(object oo, Message ss);
@@ -133,7 +133,7 @@ public partial class ChatViewModel : ObservableObject, INavigationAware
 
         _listenDataThread.Start();
             
-        _isConnected = true;
+        IsConnected = true;
     }
 
     private void SendCredentials()
