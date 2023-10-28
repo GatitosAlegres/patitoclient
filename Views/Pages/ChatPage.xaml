@@ -36,7 +36,7 @@
         <DockPanel Grid.Column="1">
             <StackPanel>
                 <TextBlock Name="LabelClientReceiver" Text="" FontSize="14" FontWeight="SemiBold"></TextBlock>
-                <ScrollViewer VerticalScrollBarVisibility="Auto" Height="480">
+                <ScrollViewer Name="ScrollViewer" VerticalScrollBarVisibility="Auto" Height="480">
                     <StackPanel Orientation="Vertical" VerticalAlignment="Bottom" Margin="10,40,40,50" Name="StackPanel_ChatLayout">
                         <!-- Contenido del chat -->
                     </StackPanel>

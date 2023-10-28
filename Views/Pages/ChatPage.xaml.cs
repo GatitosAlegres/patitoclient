@@ -86,6 +86,7 @@ namespace PatitoClient.Views.Pages
                         StackPanel_ChatLayout.Children.Add(panel);
                     });
             }); 
+            ScrollViewer.ScrollToBottom();
         }
 
         private void OnSendTextMessage(object o, Message message)
@@ -100,6 +101,7 @@ namespace PatitoClient.Views.Pages
                      StackPanel_ChatLayout.Children.Add(panel);
                  });
             });
+            ScrollViewer.ScrollToBottom();
         }
         
         private void TextBox_InputMessage_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
