@@ -28,6 +28,7 @@ public partial class ChatViewModel : ObservableObject, INavigationAware
     private List<Client> _clients;
     public bool IsConnected;
     public int listViewSelectedIndex = -1;
+    private Chat _currentChat;
 
     public delegate void HandlerTextMessageEvent(object oo, Message ss);
     public delegate void HandlerClientsListOnlineEvent(object oo, List<Client> clients);
@@ -76,18 +77,21 @@ public partial class ChatViewModel : ObservableObject, INavigationAware
             var payloadBytes = Encoding.UTF8.GetBytes(payloadSerialized);
         
             _clientSocket?.Send(payloadBytes);
-
-            var emitterNickname = message.Emitter.Nickname;
-            var bodyMessage = message.Body;
             
-            if(!Chat.ClientHasChat(_client, message.Emitter))
+            if (_client.Chats.Exists(ch => ch.Receiver.Nickname == _clientReceiver.Nickname))
             {
-                var chat = CreateChat(_client, message.Emitter);
-                        
-                _client.Chats.Add(chat);
+                var restoredChat = _client.Chats.Find(cht => cht.Receiver.Nickname == _clientReceiver.Nickname)!;
+                var index = _client.Chats.IndexOf(restoredChat);
+                            
+                _client.Chats[index].Messages.Add(message);
             }
-                    
-            Chat.RestoreChat(_client, _clientReceiver).AddMessage(message);
+            else
+            {
+                var newChat = new Chat(_client, _clientReceiver);
+                newChat.Messages.Add(message);
+                _client.Chats.Add(newChat);
+                            
+            }
             
             OnSendTextMessage(message);
         }
@@ -106,12 +110,18 @@ public partial class ChatViewModel : ObservableObject, INavigationAware
       
     protected virtual void OnTextMessageReceived(Message message)
     {
-        ReceivedTextMessageEvent?.Invoke(this, message);
+        Application.Current.Dispatcher.Invoke((Action)(() =>
+        {
+            ReceivedTextMessageEvent?.Invoke(this, message);
+        }));
     }
 
     protected virtual void OnSendTextMessage(Message message)
     {
-        SendTextMessageEvent?.Invoke(this, message);
+        Application.Current.Dispatcher.Invoke((Action)(() =>
+        {
+            SendTextMessageEvent?.Invoke(this, message);
+        }));
     }
 
     protected virtual void OnClientsList(List<Client> clients)
@@ -122,7 +132,10 @@ public partial class ChatViewModel : ObservableObject, INavigationAware
 
     protected virtual void OnError(string message)
     {
-        Error?.Invoke(this, message);
+        Application.Current.Dispatcher.Invoke((Action)(() =>
+        {
+            Error?.Invoke(this, message);
+        }));
     }
 
     public void SuccessfulConnect(string nickName)
@@ -175,8 +188,6 @@ public partial class ChatViewModel : ObservableObject, INavigationAware
                     {
                         var clients = DecodeClients(payload);
 
-                        _clients = clients;
-
                         OnClientsList(clients);
                     }
                         break;
@@ -184,18 +195,27 @@ public partial class ChatViewModel : ObservableObject, INavigationAware
                     case PayloadType.CLIENT_TO_CLIENT:
                     {
                         var message = DecodeMessage(payload);
-                        var receiverNickname = message.Emitter.Nickname;
-
-                        if (!Chat.ClientHasChat(_client, message.Emitter))
+                        var emitterNickname = message.Emitter.Nickname;
+                        
+                        if (_client.Chats.Exists(ch => ch.Receiver.Nickname == emitterNickname))
                         {
-                            var chat = CreateChat(_client, message.Emitter);
-
-                            _client.Chats.Add(chat);
+                            var restoredChat = _client.Chats.Find(cht => cht.Receiver.Nickname == emitterNickname)!;
+                            var index = _client.Chats.IndexOf(restoredChat);
+                            
+                            _client.Chats[index].Messages.Add(message);
                         }
+                        else
+                        {
+                            var receiverClient = _clients.Find(clt => clt.Nickname == emitterNickname)!;
+                            
+                            var newChat = new Chat(_client, receiverClient);
+                            newChat.Messages.Add(message);
+                            _client.Chats.Add(newChat);
+                            
+                        }
+                        
 
-                        Chat.RestoreChat(_client, message.Emitter).AddMessage(message);
-
-                        if (_clientReceiver != null && _clientReceiver.Nickname == receiverNickname)
+                        if (_clientReceiver != null && _clientReceiver.Nickname == emitterNickname)
                             OnTextMessageReceived(message);
 
                     }
@@ -210,15 +230,6 @@ public partial class ChatViewModel : ObservableObject, INavigationAware
         {
             OnError(err.Message);
         }
-    }
-        
-    private Chat CreateChat(Client emitter, Client receiver)
-    {
-        var chat = new Chat(emitter, receiver);
-        
-        emitter.Chats.Add(chat);
-        
-        return chat;
     }
     
     private Message DecodeMessage(Payload payload)
@@ -253,31 +264,26 @@ public partial class ChatViewModel : ObservableObject, INavigationAware
 
         _clientReceiver = client;
 
+        if (_client.Chats.Exists(ch => ch.Receiver.Nickname == _clientReceiver.Nickname))
+        {
+            var restoredChat = _client.Chats.Find(cht => cht.Receiver.Nickname == _clientReceiver.Nickname);
+            
+            _currentChat = restoredChat;
+        }
+        else
+        {
+            var newChat = new Chat(_client, _clientReceiver);
+            _client.Chats.Add(newChat);
+            _currentChat = newChat;
+        }
+        
         LoadChat();
-
     }
 
     private void LoadChat()
     {
-        if (Chat.ClientHasChat(_client, _clientReceiver))
-        {
-            var chatRestored = Chat.RestoreChat(_client, _clientReceiver);
-            
-            chatRestored.Messages.ForEach(message =>
-            {
-                if(message.Emitter == _client)
-                    OnSendTextMessage(message);
-                else
-                    OnTextMessageReceived(message);
-                
-            });
-            
-            return;
-        }
-
-        var chat = CreateChat(_client, _clientReceiver);
         
-        chat.Messages.ForEach(message =>
+        _currentChat.Messages.ForEach(message =>
         {
             if(message.Emitter == _client)
                 OnSendTextMessage(message);
