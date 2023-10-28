@@ -62,6 +62,8 @@ public partial class ChatViewModel : ObservableObject, INavigationAware
         
         try
         {
+            if (_inputMessage == "") return;
+            
             var body = _inputMessage;
 
             var message = new Message(body, _client, _clientReceiver);
@@ -144,8 +146,11 @@ public partial class ChatViewModel : ObservableObject, INavigationAware
             
         SendCredentials();
 
-        _listenDataThread.Start();
+        if (!_listenDataThread.IsAlive)
+            _listenDataThread = new Thread(ListenData);
             
+        _listenDataThread.Start();
+        
         IsConnected = true;
     }
 
@@ -170,6 +175,10 @@ public partial class ChatViewModel : ObservableObject, INavigationAware
         {
             while (true)
             {
+                
+                if (!IsConnected)
+                    break;
+                
                 var buffer = new byte[Constants.MAX_MESSAGE_SIZE];
 
                 var bytesRead = _clientSocket!.Receive(buffer);
@@ -290,5 +299,12 @@ public partial class ChatViewModel : ObservableObject, INavigationAware
             else
                 OnTextMessageReceived(message);
         });
+    }
+    
+    public void Disconnect()
+    {
+        IsConnected = false;
+        _clientSocket?.Close();
+        _clientSocket?.Dispose();
     }
 }

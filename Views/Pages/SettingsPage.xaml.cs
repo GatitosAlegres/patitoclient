@@ -13,10 +13,12 @@ namespace PatitoClient.Views.Pages
     public partial class SettingsPage : INavigableView<ViewModels.SettingsViewModel>
     {
         public ViewModels.SettingsViewModel ViewModel { get; }
+        public ViewModels.ChatViewModel ChatViewModel { get; }
 
-        public SettingsPage(ViewModels.SettingsViewModel viewModel)
+        public SettingsPage(ViewModels.SettingsViewModel viewModel, ViewModels.ChatViewModel chatViewModel)
         {
             ViewModel = viewModel;
+            ChatViewModel = chatViewModel;
 
             InitializeComponent();
         }
@@ -51,6 +53,31 @@ namespace PatitoClient.Views.Pages
                      message: ex.Message,
                      SymbolRegular.ErrorCircle24,
                      ControlAppearance.Danger);
+            }
+        }
+        
+        private void btn_Disconnect_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!ChatViewModel.IsConnected)
+                    throw new ArgumentException("You are not connected to the server");
+
+                ChatViewModel.Disconnect();
+
+                SnackBar_OnPortSettingsSave.Show(
+                    title: "Disconnection",
+                    message: "Successful disconnection of the duckling server",
+                    SymbolRegular.PlugDisconnected24,
+                    ControlAppearance.Primary);
+            }
+            catch (Exception err)
+            {
+                SnackBar_OnPortSettingsSave.Show(
+                    title: "Disconnection",
+                    message: err.Message,
+                    SymbolRegular.ErrorCircle24,
+                    ControlAppearance.Danger);
             }
         }
     }

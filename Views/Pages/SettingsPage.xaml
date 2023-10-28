@@ -40,8 +40,10 @@
             </StackPanel>
         </StackPanel>
 
-        <ui:Button Content="Connect" Icon="Connector24" Margin="0,24,0,0" Click="Button_Click"/>
-
+        <StackPanel Orientation="Horizontal">
+            <ui:Button Content="Connect" Icon="Connector24" Margin="0,24,0,0" Click="Button_Click"/>
+            <ui:Button Name="btn_Disconnect" Content="Disconnect" Icon="PlugDisconnected24" Margin="24,24,0,0" Click="btn_Disconnect_Click"/>
+        </StackPanel>
         
         <TextBlock
             FontSize="20"
